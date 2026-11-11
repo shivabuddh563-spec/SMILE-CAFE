@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Smile Cafe - Smart Ordering & Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-stone-900 text-stone-100 min-h-screen flex flex-col items-center justify-start p-0 sm:p-4">
+
+  <!-- Top Switcher -->
+  <div class="w-full max-w-md bg-stone-900/95 border-b border-stone-800 p-2 flex gap-2 sticky top-0 z-50 backdrop-blur">
+    <button onclick="toggleAppMode('customer')" id="btn-mode-customer" class="flex-1 py-1.5 rounded-xl text-xs font-bold bg-amber-500 text-stone-950 transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+      <span>😊</span> Customer View
+    </button>
+    <button onclick="toggleAppMode('owner')" id="btn-mode-owner" class="flex-1 py-1.5 rounded-xl text-xs font-bold bg-stone-800 text-stone-400 transition-colors flex items-center justify-center gap-1.5">
+      <span>📊</span> Owner Admin
+    </button>
+  </div>
+
+  <!-- CONTAINER 1: CUSTOMER VIEW -->
+  <div id="view-customer" class="w-full max-w-md bg-stone-950 min-h-screen sm:min-h-[844px] sm:max-h-[900px] sm:rounded-[36px] sm:border-[8px] sm:border-stone-800 shadow-2xl flex flex-col relative overflow-hidden">
+    
+    <!-- Top Header Bar -->
+    <header class="px-5 pt-4 pb-3 bg-stone-900/90 backdrop-blur border-b border-stone-800 sticky top-0 z-20 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-xl">
+          😊
+        </div>
+        <div>
+          <h1 class="text-base font-bold text-white tracking-tight flex items-center gap-1">
+            Smile Cafe
+            <span class="text-[9px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-semibold">Special</span>
+          </h1>
+          <p class="text-[11px] text-stone-400">Scan • Order • Smile</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-stone-800 border border-stone-700 text-amber-400" id="orderTypeBadge">Dine-In (Table #1)</span>
+      </div>
+    </header>
+
+    <!-- App Body -->
+    <main class="flex-1 overflow-y-auto hide-scrollbar p-4 pb-32">
+
+      <!-- SCREEN 1: QR MENU & ORDERING -->
+      <section id="screen-menu" class="space-y-4">
+        
+        <!-- Order Type & Customer Details Box -->
+        <div class="bg-stone-900/90 border border-stone-800 p-3.5 rounded-2xl space-y-3">
+          
+          <!-- Packing / Dine-in Selector -->
+          <div>
+            <label class="text-[11px] font-bold text-stone-300 block mb-1.5 flex items-center justify-between">
+              <span>Order Type (Suvidha):</span>
+              <span class="text-[10px] text-amber-400 font-normal" id="orderNoticeText">Table par baithe hain</span>
+            </label>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" onclick="setOrderType('dinein')" id="btn-dinein" class="py-2 px-3 rounded-xl text-xs font-bold bg-amber-500 text-stone-950 flex items-center justify-center gap-1.5 border border-amber-400 transition-all">
+                <span>🍽️</span> Dine-In (Table)
+              </button>
+              <button type="button" onclick="setOrderType('packing')" id="btn-packing" class="py-2 px-3 rounded-xl text-xs font-bold bg-stone-950 text-stone-400 flex items-center justify-center gap-1.5 border border-stone-800 hover:text-stone-200 transition-all">
+                <span>📦</span> Packing (Takeaway)
+              </button>
+            </div>
+          </div>
+
+          <!-- Table & Phone Inputs -->
+          <div class="grid grid-cols-3 gap-2 pt-1 border-t border-stone-800/80">
+            <div class="col-span-1" id="tableInputContainer">
+              <label class="text-[10px] text-stone-400 block mb-1">Table No. (1-10)</label>
+              <select id="tableSelector" onchange="onTableSelectChange(this.value)" class="w-full bg-stone-950 border border-stone-800 rounded-xl px-2 py-2 text-xs font-semibold text-stone-200 focus:outline-none focus:border-amber-500">
+                <option value="1" selected>Table 1</option>
+                <option value="2">Table 2</option>
+                <option value="3">Table 3</option>
+                <option value="4">Table 4</option>
+                <option value="5">Table 5</option>
+                <option value="6">Table 6</option>
+                <option value="7">Table 7</option>
+                <option value="8">Table 8</option>
+                <option value="9">Table 9</option>
+                <option value="10">Table 10</option>
+              </select>
+            </div>
+            <div class="col-span-2" id="phoneInputContainer">
+              <label class="text-[10px] text-stone-400 block mb-1">WhatsApp No. (Stamp & Bill)</label>
+              <input type="tel" id="customerPhoneInput" value="9876543210" placeholder="10-digit number" class="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2 text-xs font-medium text-stone-200 focus:outline-none focus:border-amber-500">
+            </div>
+          </div>
+
+          <!-- Customer Distance / Remote Mode Toggle -->
+          <div class="pt-2 border-t border-stone-800 flex items-center justify-between">
+            <div class="pr-2">
+              <p class="text-xs font-bold text-white flex items-center gap-1">
+                <span>📍</span> Door se Order kar rahe hain?
+              </p>
+              <p class="text-[10px] text-stone-400">Cafe se door hone par sirf UPI Payment allow hoga (No COD)</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="remoteCustomerToggle" onchange="onRemoteToggleChange()" class="sr-only peer">
+              <div class="w-9 h-5 bg-stone-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+            </label>
+          </div>
+
+        </div>
+
+        <!-- Category Pills -->
+        <div class="flex gap-2 overflow-x-auto hide-scrollbar py-1" id="categoryContainer">
+          <button onclick="filterCategory('all', event)" class="cat-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-amber-500 text-stone-950 shrink-0">All Items</button>
+          <button onclick="filterCategory('hot-coffee', event)" class="cat-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-stone-900 text-stone-300 border border-stone-800 shrink-0">☕ Hot Coffee</button>
+          <button onclick="filterCategory('cold-coffee', event)" class="cat-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-stone-900 text-stone-300 border border-stone-800 shrink-0">🧊 Cold Coffee & Frappe</button>
+          <button onclick="filterCategory('shakes-coolers', event)" class="cat-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-stone-900 text-stone-300 border border-stone-800 shrink-0">🥤 Shakes & Coolers</button>
+          <button onclick="filterCategory('snacks', event)" class="cat-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-stone-900 text-stone-300 border border-stone-800 shrink-0">🍔 Burgers & Snacks</button>
+        </div>
+
+        <!-- Menu Items List -->
+        <div class="space-y-2.5" id="menuItemsList"></div>
+      </section>
+
+      <!-- SCREEN 2: DIGITAL LOYALTY CARD -->
+      <section id="screen-loyalty" class="hidden space-y-4">
+        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-500 via-amber-600 to-amber-700 p-5 text-stone-950 shadow-lg">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <span class="text-[11px] font-bold tracking-wider uppercase bg-stone-950/20 px-2 py-0.5 rounded text-stone-950">Smile Club</span>
+              <h3 class="text-xl font-black mt-1 tracking-tight" id="loyaltyCustomerName">Member: 9876543210</h3>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-semibold text-stone-900">Tier</span>
+              <p class="text-sm font-black">VIP Guest</p>
+            </div>
+          </div>
+
+          <p class="text-xs font-semibold text-stone-900 mb-2">5 coffee ya orders par 5th Treat bilkul FREE!</p>
+          <div class="grid grid-cols-5 gap-2" id="stampsGrid"></div>
+
+          <div class="mt-4 pt-3 border-t border-stone-950/15 flex justify-between items-center text-xs font-bold text-stone-900">
+            <span id="stampStatusLabel">4 / 5 Stamps Completed</span>
+            <span class="underline cursor-pointer" onclick="simulateNewStamp()">+ Test Stamp</span>
+          </div>
+        </div>
+
+        <div class="bg-stone-900/90 border border-stone-800 rounded-2xl p-4 space-y-3">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-stone-400">Smile Rewards System</h4>
+          <p class="text-xs text-stone-300">Har order par automatic stamp add hoga. 5th order complete hote hi free coffee coupon unlock ho jayega!</p>
+        </div>
+      </section>
+
+      <!-- SCREEN 3: REWARDS & REVIEWS -->
+      <section id="screen-reviews" class="hidden space-y-4">
+        <div class="bg-gradient-to-r from-emerald-500/20 to-stone-900 border border-emerald-500/40 rounded-2xl p-4 space-y-2">
+          <div class="flex items-center gap-2 text-emerald-400">
+            <i data-lucide="gift" class="w-5 h-5"></i>
+            <span class="text-xs font-bold uppercase tracking-wider">Smile Special Coupon</span>
+          </div>
+          <h3 class="text-base font-bold text-white">1 Free Cappuccino / Cold Coffee</h3>
+          <p class="text-xs text-stone-400">Counter par yeh coupon code dikhakar claim karein:</p>
+          <div class="flex items-center gap-2 pt-1">
+            <span class="px-3 py-1.5 rounded-lg bg-stone-950 font-mono text-sm font-bold tracking-widest text-emerald-400 border border-stone-800">SMILE-FREE</span>
+            <button onclick="navigator.clipboard.writeText('SMILE-FREE'); alert('Coupon code copied!');" class="px-3 py-1.5 rounded-lg bg-emerald-500 text-stone-950 font-bold text-xs">Copy</button>
+          </div>
+        </div>
+
+        <div class="bg-stone-900/90 border border-stone-800 rounded-2xl p-4 space-y-3">
+          <div>
+            <h4 class="text-sm font-bold text-white">Smile Cafe ki coffee aur service pasand aayi?</h4>
+            <p class="text-[11px] text-stone-400">Google par 5-star rating dekar support karein!</p>
+          </div>
+          <button onclick="window.open('https://search.google.com/local/writereview', '_blank')" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white flex items-center justify-center gap-2">
+            <i data-lucide="star" class="w-4 h-4"></i> Rate Smile Cafe on Google
+          </button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Floating Sticky Cart Bar -->
+    <div id="stickyCartBar" class="hidden absolute bottom-20 left-4 right-4 bg-amber-500 text-stone-950 px-4 py-3 rounded-2xl shadow-xl flex items-center justify-between z-30 font-bold">
+      <div class="flex items-center gap-2">
+        <span class="w-7 h-7 rounded-full bg-stone-950 text-white flex items-center justify-center text-xs" id="cartCountBadge">0</span>
+        <span class="text-xs tracking-tight" id="cartTotalText">₹ 0 total</span>
+      </div>
+      <button onclick="openCheckoutModal()" class="flex items-center gap-1.5 text-xs uppercase tracking-wider font-extrabold bg-stone-950 text-amber-400 px-3.5 py-1.5 rounded-xl">
+        Select Payment <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>
+
+    <!-- Customer Bottom Navigation -->
+    <nav class="absolute bottom-0 left-0 right-0 bg-stone-950/95 backdrop-blur border-t border-stone-800 px-6 py-2.5 flex justify-around items-center z-20">
+      <button onclick="switchCustomerTab('menu')" id="nav-menu" class="flex flex-col items-center gap-1 text-amber-400">
+        <i data-lucide="utensils" class="w-5 h-5"></i>
+        <span class="text-[10px] font-semibold">Menu</span>
+      </button>
+
+      <button onclick="switchCustomerTab('loyalty')" id="nav-loyalty" class="flex flex-col items-center gap-1 text-stone-400 hover:text-stone-200">
+        <i data-lucide="award" class="w-5 h-5"></i>
+        <span class="text-[10px] font-semibold">Smile Card</span>
+      </button>
+
+      <button onclick="switchCustomerTab('reviews')" id="nav-reviews" class="flex flex-col items-center gap-1 text-stone-400 hover:text-stone-200">
+        <i data-lucide="gift" class="w-5 h-5"></i>
+        <span class="text-[10px] font-semibold">Rewards</span>
+      </button>
+    </nav>
+
+    <!-- CHECKOUT & PAYMENT MODAL -->
+    <div id="checkoutModal" class="hidden absolute inset-0 bg-stone-950/80 backdrop-blur-sm z-50 flex flex-col justify-end">
+      <div class="bg-stone-900 border-t border-stone-800 rounded-t-3xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
+        <div class="flex justify-between items-center pb-2 border-b border-stone-800">
+          <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
+            <span>🛒</span> Confirm Order & Payment
+          </h3>
+          <button onclick="closeCheckoutModal()" class="text-stone-400 hover:text-white text-xs font-bold px-2 py-1 bg-stone-800 rounded-lg">✕ Close</button>
+        </div>
+
+        <!-- Bill Summary -->
+        <div class="bg-stone-950 p-3.5 rounded-2xl border border-stone-800 space-y-2 text-xs">
+          <div class="flex justify-between text-stone-300">
+            <span>Order Type:</span>
+            <span class="font-bold text-white" id="modalOrderTypeVal">Dine-In (Table 1)</span>
+          </div>
+          <div class="flex justify-between text-stone-300">
+            <span>Items Subtotal:</span>
+            <span class="font-bold text-white" id="modalSubtotalVal">₹ 0</span>
+          </div>
+          <div class="flex justify-between text-stone-300">
+            <span>Packing Charges:</span>
+            <span class="font-bold text-amber-400" id="modalPackingVal">₹ 0</span>
+          </div>
+          <div class="border-t border-stone-800 pt-2 flex justify-between text-sm font-black text-amber-400">
+            <span>Total Payable:</span>
+            <span id="modalGrandTotalVal">₹ 0</span>
+          </div>
+        </div>
+
+        <!-- Payment Mode Selector -->
+        <div class="space-y-2">
+          <label class="text-xs font-bold text-stone-300 block">Payment Mode Chunein:</label>
+          
+          <!-- UPI Option -->
+          <label class="flex items-center justify-between p-3 rounded-xl bg-stone-950 border border-stone-800 cursor-pointer hover:border-emerald-500/50">
+            <div class="flex items-center gap-2.5">
+              <input type="radio" name="paymentOption" value="upi" checked onchange="onPaymentOptionChange('upi')" class="text-emerald-500 focus:ring-0">
+              <div>
+                <p class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <span>📱</span> Online UPI (GPay / PhonePe / Paytm)
+                </p>
+                <p class="text-[10px] text-stone-400">Instant scan QR & pay</p>
+              </div>
+            </div>
+            <span class="text-[10px] bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded">Fastest</span>
+          </label>
+
+          <!-- COD / Cash at Counter Option -->
+          <label id="codOptionWrapper" class="flex items-center justify-between p-3 rounded-xl bg-stone-950 border border-stone-800 cursor-pointer hover:border-amber-500/50">
+            <div class="flex items-center gap-2.5">
+              <input type="radio" name="paymentOption" value="cod" id="radioCod" onchange="onPaymentOptionChange('cod')" class="text-amber-500 focus:ring-0">
+              <div>
+                <p class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <span>💵</span> Cash On Delivery / Counter Pay
+                </p>
+                <p class="text-[10px] text-stone-400">Table par cash dein ya counter par pay karein</p>
+              </div>
+            </div>
+            <span class="text-[10px] bg-stone-800 text-stone-300 font-bold px-2 py-0.5 rounded">Cash</span>
+          </label>
+
+          <!-- Disabled Warning if Remote Customer -->
+          <div id="remoteLockAlert" class="hidden p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-[11px] text-rose-300 flex items-center gap-2">
+            <span>⚠️</span>
+            <span>Aap cafe se door hain, isliye Cash On Delivery (COD) band hai. Kripya <b>UPI</b> se order karein.</span>
+          </div>
+        </div>
+
+        <!-- UPI QR Preview Box -->
+        <div id="upiQrSection" class="p-3.5 bg-stone-950 rounded-2xl border border-stone-800 flex flex-col items-center text-center space-y-2">
+          <p class="text-xs font-bold text-white">Smile Cafe Official UPI QR</p>
+          <div class="w-32 h-32 bg-white p-2 rounded-xl flex items-center justify-center shadow-inner">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=upi://pay?pa=smilecafe@upi%26pn=Smile%20Cafe%26cu=INR" alt="UPI QR" class="w-full h-full object-contain">
+          </div>
+          <p class="text-[10px] text-stone-400 font-mono">UPI ID: smilecafe@upi</p>
+        </div>
+
+        <!-- Confirm Button -->
+        <button onclick="finalizeAndPlaceOrder()" class="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg">
+          <i data-lucide="check-circle" class="w-4 h-4"></i> Place Final Order
+        </button>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CONTAINER 2: OWNER VIEW -->
+  <div id="view-owner" class="hidden w-full max-w-md bg-stone-950 min-h-screen sm:min-h-[844px] sm:max-h-[900px] sm:rounded-[36px] sm:border-[8px] sm:border-stone-800 shadow-2xl flex flex-col relative overflow-hidden">
+    
+    <!-- Top Header Bar -->
+    <header class="px-5 pt-4 pb-3 bg-stone-900/90 backdrop-blur border-b border-stone-800 sticky top-0 z-20 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+          <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-base font-bold text-white tracking-tight flex items-center gap-1.5">
+            Smile Cafe Owner
+            <span class="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Live Hub</span>
+          </h1>
+          <p class="text-[11px] text-stone-400">10 Tables & Packing Orders</p>
+        </div>
+      </div>
+      <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-950/60 border border-emerald-800 text-emerald-400">Live Kitchen</span>
+    </header>
+
+    <!-- Main Screens for Owner -->
+    <main class="flex-1 overflow-y-auto hide-scrollbar p-4 pb-24">
+
+      <!-- SCREEN 1: ANALYTICS & LIVE ORDERS -->
+      <section id="screen-dashboard" class="space-y-4">
+        <div class="grid grid-cols-2 gap-2.5">
+          <div class="bg-stone-900 border border-stone-800 p-3.5 rounded-2xl">
+            <span class="text-[11px] text-stone-400">Today's Sales</span>
+            <p class="text-xl font-black text-white mt-0.5">₹ 18,240</p>
+            <span class="text-[10px] text-emerald-400 font-semibold">↑ 24% vs yesterday</span>
+          </div>
+          <div class="bg-stone-900 border border-stone-800 p-3.5 rounded-2xl">
+            <span class="text-[11px] text-stone-400">Repeat Retention</span>
+            <p class="text-xl font-black text-amber-400 mt-0.5">48.2%</p>
+            <span class="text-[10px] text-stone-400 font-semibold">High loyal guests</span>
+          </div>
+          <div class="bg-stone-900 border border-stone-800 p-3.5 rounded-2xl">
+            <span class="text-[11px] text-stone-400">Total Orders</span>
+            <p class="text-lg font-black text-white mt-0.5">81 Orders</p>
+            <span class="text-[10px] text-stone-400">Dine-in: 58 | Pack: 23</span>
+          </div>
+          <div class="bg-stone-900 border border-stone-800 p-3.5 rounded-2xl">
+            <span class="text-[11px] text-stone-400">Active Tables (1-10)</span>
+            <p class="text-lg font-black text-white mt-0.5">7 / 10 Tables</p>
+            <span class="text-[10px] text-emerald-400 font-semibold">Tables 1,2,4,7,9,10</span>
+          </div>
+        </div>
+
+        <!-- Live Orders Feed -->
+        <div class="bg-stone-900/90 border border-stone-800 rounded-2xl p-4 space-y-3">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold text-stone-300">Live Kitchen Incoming Orders</h4>
+            <span class="text-[10px] text-emerald-400 animate-pulse">● Live updating</span>
+          </div>
+          <div class="space-y-2.5" id="liveOrdersContainer">
+            <div class="p-3 rounded-xl bg-stone-950/60 border border-amber-500/30 flex justify-between items-center text-xs">
+              <div>
+                <p class="font-bold text-white flex items-center gap-1.5">
+                  <span>Table 7</span>
+                  <span class="text-[9px] bg-emerald-500/20 text-emerald-400 px-1 rounded font-bold">UPI PAID</span>
+                  <span class="text-[10px] text-stone-400 font-normal">• 2 mins ago</span>
+                </p>
+                <p class="text-[11px] text-stone-300 mt-0.5">2x Hazelnut Cappuccino, 1x Veg Grilled Sandwich</p>
+                <p class="text-[10px] text-stone-500">Dine-In • 9876543210</p>
+              </div>
+              <span class="px-2.5 py-1 rounded bg-amber-500/10 text-amber-400 font-bold">₹ 380</span>
+            </div>
+            <div class="p-3 rounded-xl bg-stone-950/60 border border-stone-800 flex justify-between items-center text-xs">
+              <div>
+                <p class="font-bold text-white flex items-center gap-1.5">
+                  <span class="text-amber-400">📦 Packing Order</span>
+                  <span class="text-[9px] bg-amber-500/20 text-amber-300 px-1 rounded font-bold">CASH</span>
+                  <span class="text-[10px] text-stone-400 font-normal">• 9 mins ago</span>
+                </p>
+                <p class="text-[11px] text-stone-300 mt-0.5">1x Smile Special Cold Coffee, 1x Crispy Burger (+₹15 pack)</p>
+                <p class="text-[10px] text-stone-500">Takeaway • 9811223344</p>
+              </div>
+              <span class="px-2.5 py-1 rounded bg-stone-800 text-stone-300 font-bold">₹ 275</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCREEN 2: WAPAS BULAO -->
+      <section id="screen-retargeting" class="hidden space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-bold text-white">WhatsApp Re-Targeting</h3>
+          <span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 text-[10px] font-bold">3 Inactive</span>
+        </div>
+        <div class="space-y-2.5" id="inactiveListContainer"></div>
+      </section>
+    </main>
+
+    <!-- Owner Nav -->
+    <nav class="absolute bottom-0 left-0 right-0 bg-stone-950/95 backdrop-blur border-t border-stone-800 px-8 py-2.5 flex justify-around items-center z-20">
+      <button onclick="switchOwnerTab('dashboard')" id="nav-owner-dashboard" class="flex flex-col items-center gap-1 text-emerald-400">
+        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+        <span class="text-[10px] font-semibold">Dashboard</span>
+      </button>
+      <button onclick="switchOwnerTab('retargeting')" id="nav-owner-retargeting" class="flex flex-col items-center gap-1 text-stone-400">
+        <i data-lucide="repeat" class="w-5 h-5"></i>
+        <span class="text-[10px] font-semibold">Wapas Bulao</span>
+      </button>
+    </nav>
+  </div>
+
+  <script>
+    const menuData = [
+      { id: 1, name: "Espresso Single Shot", category: "hot-coffee", price: 80, desc: "Pure dark rich concentrated Italian roast", emoji: "☕" },
+      { id: 2, name: "Classic Cappuccino", category: "hot-coffee", price: 120, desc: "Espresso with equal parts steamed milk & thick foam", emoji: "☕" },
+      { id: 3, name: "Hazelnut Cappuccino", category: "hot-coffee", price: 140, desc: "Signature espresso with roasted hazelnut flavour", emoji: "☕" },
+      { id: 4, name: "Cafe Latte", category: "hot-coffee", price: 130, desc: "Smooth espresso with light creamy microfoam", emoji: "☕" },
+      { id: 5, name: "Caramel Macchiato", category: "hot-coffee", price: 150, desc: "Vanilla steamed milk with espresso drizzle & caramel", emoji: "☕" },
+      { id: 6, name: "Cafe Mocha", category: "hot-coffee", price: 150, desc: "Espresso layered with dark chocolate & whipped cream", emoji: "☕" },
+      { id: 7, name: "Caffe Americano", category: "hot-coffee", price: 90, desc: "Double shot espresso diluted with piping hot water", emoji: "☕" },
+      { id: 8, name: "Irish Coffee (Non-Alc)", category: "hot-coffee", price: 160, desc: "Rich coffee with creamy Irish syrup & brown sugar", emoji: "☕" },
+      { id: 9, name: "Smile Special Cold Coffee", category: "cold-coffee", price: 130, desc: "Thick creamy whipped iced coffee with choco drizzle", emoji: "🧊" },
+      { id: 10, name: "Hazelnut Cold Coffee", category: "cold-coffee", price: 150, desc: "Cold blended coffee with premium roasted hazelnut", emoji: "🧊" },
+      { id: 11, name: "Mocha Frappe Crunch", category: "cold-coffee", price: 170, desc: "Blended icy espresso with chocolate chips & cream", emoji: "🥤" },
+      { id: 12, name: "Cold Brew Tonic / Black", category: "cold-coffee", price: 140, desc: "18-hours slow cold seeped artisanal roast", emoji: "🧊" },
+      { id: 13, name: "Iced Caramel Latte", category: "cold-coffee", price: 150, desc: "Chilled espresso, milk, caramel drizzle over ice", emoji: "🧊" },
+      { id: 14, name: "Affogato Vanilla", category: "cold-coffee", price: 130, desc: "Hot espresso shot poured over rich vanilla gelato", emoji: "🍨" },
+      { id: 15, name: "Oreo Mud Thick Shake", category: "shakes-coolers", price: 150, desc: "Loaded oreo biscuits blended with creamy milk", emoji: "🥤" },
+      { id: 16, name: "KitKat Crunch Shake", category: "shakes-coolers", price: 160, desc: "Thick chocolate shake topped with KitKat bars", emoji: "🥤" },
+      { id: 17, name: "Blue Curacao Mojito", category: "shakes-coolers", price: 110, desc: "Cooling mint leaves, lime & blue sparkling soda", emoji: "🧊" },
+      { id: 18, name: "Green Apple Cooler", category: "shakes-coolers", price: 110, desc: "Crisp tangy green apple with sparkling fizz", emoji: "🍏" },
+      { id: 19, name: "Crispy Paneer Burger", category: "snacks", price: 140, desc: "Golden fried crunchy paneer patty with spicy dip", emoji: "🍔" },
+      { id: 20, name: "Veg Cheese Burst Sandwich", category: "snacks", price: 130, desc: "Grilled triple layer sandwich loaded with mozzarella", emoji: "🥪" },
+      { id: 21, name: "Peri Peri French Fries", category: "snacks", price: 110, desc: "Crispy golden potato fries with zesty African spice", emoji: "🍟" },
+      { id: 22, name: "Cheese Garlic Bread (4 pcs)", category: "snacks", price: 120, desc: "Toasted baguette slices with herbs and molten cheese", emoji: "🍞" }
+    ];
+
+    const inactiveCustomers = [
+      { name: "Rohit Sharma", phone: "9876543210", daysAgo: 21, fav: "Smile Special Cold Coffee" },
+      { name: "Neha Gupta", phone: "9811223344", daysAgo: 16, fav: "Hazelnut Cappuccino" },
+      { name: "Aditya Jain", phone: "9988776655", daysAgo: 28, fav: "Oreo Mud Shake" }
+    ];
+
+    let cart = {};
+    let currentStamps = 4;
+    let currentCategory = 'all';
+    let currentOrderType = 'dinein';
+    let isCustomerRemote = false;
+    let selectedPayment = 'upi';
+    const PACKING_FEE_PER_ORDER = 15;
+
+    function toggleAppMode(mode) {
+      const isCustomer = mode === 'customer';
+      document.getElementById('view-customer').classList.toggle('hidden', !isCustomer);
+      document.getElementById('view-owner').classList.toggle('hidden', isCustomer);
+      document.getElementById('btn-mode-customer').className = isCustomer ? 'flex-1 py-1.5 rounded-xl text-xs font-bold bg-amber-500 text-stone-950 transition-colors flex items-center justify-center gap-1.5 shadow-sm' : 'flex-1 py-1.5 rounded-xl text-xs font-bold bg-stone-800 text-stone-400 transition-colors flex items-center justify-center gap-1.5';
+      document.getElementById('btn-mode-owner').className = !isCustomer ? 'flex-1 py-1.5 rounded-xl text-xs font-bold bg-emerald-500 text-stone-950 transition-colors flex items-center justify-center gap-1.5 shadow-sm' : 'flex-1 py-1.5 rounded-xl text-xs font-bold bg-stone-800 text-stone-400 transition-colors flex items-center justify-center gap-1.5';
+      lucide.createIcons();
+    }
+
+    function setOrderType(type) {
+      currentOrderType = type;
+      const btnDinein = document.getElementById('btn-dinein');
+      const btnPacking = document.getElementById('btn-packing');
+      const tableBox = document.getElementById('tableInputContainer');
+      const notice = document.getElementById('orderNoticeText');
+      const badge = document.getElementById('orderTypeBadge');
+
+      if (type === 'dinein') {
+        btnDinein.className = "py-2 px-3 rounded-xl text-xs font-bold bg-amber-500 text-stone-950 flex items-center justify-center gap-1.5 border border-amber-400 transition-all";
+        btnPacking.className = "py-2 px-3 rounded-xl text-xs font-bold bg-stone-950 text-stone-400 flex items-center justify-center gap-1.5 border border-stone-800 hover:text-stone-200 transition-all";
+        tableBox.classList.remove('opacity-40', 'pointer-events-none');
+        const tbl = document.getElementById('tableSelector').value;
+        notice.innerText = "Table par baithe hain";
+        badge.innerText = `Dine-In (Table #${tbl})`;
+      } else {
+        btnPacking.className = "py-2 px-3 rounded-xl text-xs font-bold bg-amber-500 text-stone-950 flex items-center justify-center gap-1.5 border border-amber-400 transition-all";
+        btnDinein.className = "py-2 px-3 rounded-xl text-xs font-bold bg-stone-950 text-stone-400 flex items-center justify-center gap-1.5 border border-stone-800 hover:text-stone-200 transition-all";
+        tableBox.classList.add('opacity-40', 'pointer-events-none');
+        notice.innerText = `Packing charge: ₹${PACKING_FEE_PER_ORDER} extra`;
+        badge.innerText = `📦 Packing (Takeaway)`;
+      }
+      updateCartBar();
+    }
+
+    function onTableSelectChange(val) {
+      if (currentOrderType === 'dinein') {
+        document.getElementById('orderTypeBadge').innerText = `Dine-In (Table #${val})`;
+      }
+    }
+
+    function onRemoteToggleChange() {
+      const toggle = document.getElementById('remoteCustomerToggle');
+      isCustomerRemote = toggle.checked;
+      const codWrapper = document.getElementById('codOptionWrapper');
+      const radioCod = document.getElementById('radioCod');
+      const alertBox = document.getElementById('remoteLockAlert');
+
+      if (isCustomerRemote) {
+        setOrderType('packing');
+        codWrapper.classList.add('opacity-30', 'pointer-events-none');
+        radioCod.disabled = true;
+        document.querySelector('input[name="paymentOption"][value="upi"]').checked = true;
+        selectedPayment = 'upi';
+        alertBox.classList.remove('hidden');
+        document.getElementById('upiQrSection').classList.remove('hidden');
+      } else {
+        codWrapper.classList.remove('opacity-30', 'pointer-events-none');
+        radioCod.disabled = false;
+        alertBox.classList.add('hidden');
+      }
+    }
+
+    function onPaymentOptionChange(mode) {
+      selectedPayment = mode;
+      const upiSection = document.getElementById('upiQrSection');
+      if (mode === 'upi') {
+        upiSection.classList.remove('hidden');
+      } else {
+        upiSection.classList.add('hidden');
+      }
+    }
+
+    function renderMenu() {
+      const container = document.getElementById('menuItemsList');
+      const filtered = currentCategory === 'all' ? menuData : menuData.filter(i => i.category === currentCategory);
+      container.innerHTML = filtered.map(item => {
+        const qty = cart[item.id] || 0;
+        return `
+          <div class="bg-stone-900 border border-stone-800 p-3.5 rounded-2xl flex items-center justify-between gap-3">
+            <div class="w-12 h-12 rounded-xl bg-stone-800/80 flex items-center justify-center text-2xl shrink-0">${item.emoji}</div>
+            <div class="flex-1 min-w-0">
+              <h4 class="text-xs font-bold text-white tracking-tight truncate">${item.name}</h4>
+              <p class="text-[10px] text-stone-400 line-clamp-1">${item.desc}</p>
+              <span class="text-xs font-bold text-amber-400 mt-0.5 block">₹ ${item.price}</span>
+            </div>
+            <div class="flex items-center gap-2 bg-stone-950 border border-stone-800 rounded-xl px-2 py-1">
+              ${qty > 0 ? `<button onclick="updateCart(${item.id}, -1)" class="text-stone-400 hover:text-white px-1 text-sm font-bold">-</button><span class="text-xs font-bold text-white px-1">${qty}</span>` : ''}
+              <button onclick="updateCart(${item.id}, 1)" class="text-amber-400 hover:text-amber-300 px-1 text-sm font-bold">+</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateCart(itemId, delta) {
+      cart[itemId] = (cart[itemId] || 0) + delta;
+      if (cart[itemId] <= 0) delete cart[itemId];
+      renderMenu();
+      updateCartBar();
+    }
+
+    function updateCartBar() {
+      const bar = document.getElementById('stickyCartBar');
+      const totalItems = Object.values(cart).reduce((a, b) => a + b, 0);
+      let itemsTotal = 0;
+      for (const [id, qty] of Object.entries(cart)) {
+        const item = menuData.find(i => i.id == id);
+        if (item) itemsTotal += item.price * qty;
+      }
+      const packingFee = (currentOrderType === 'packing' && totalItems > 0) ? PACKING_FEE_PER_ORDER : 0;
+      const finalAmount = itemsTotal + packingFee;
+
+      if (totalItems > 0) {
+        bar.classList.remove('hidden');
+        document.getElementById('cartCountBadge').innerText = totalItems;
+        document.getElementById('cartTotalText').innerText = `₹ ${finalAmount} (${totalItems} items${packingFee ? ' + Pack' : ''})`;
+      } else {
+        bar.classList.add('hidden');
+      }
+    }
+
+    function openCheckoutModal() {
+      const totalItems = Object.values(cart).reduce((a, b) => a + b, 0);
+      if (totalItems === 0) return;
+
+      let itemsTotal = 0;
+      for (const [id, qty] of Object.entries(cart)) {
+        const item = menuData.find(i => i.id == id);
+        if (item) itemsTotal += item.price * qty;
+      }
+      const packingFee = (currentOrderType === 'packing') ? PACKING_FEE_PER_ORDER : 0;
+      const grandTotal = itemsTotal + packingFee;
+      const tbl = document.getElementById('tableSelector').value;
+
+      document.getElementById('modalOrderTypeVal').innerText = currentOrderType === 'dinein' ? `Dine-In (Table ${tbl})` : `📦 Packing / Takeaway`;
+      document.getElementById('modalSubtotalVal').innerText = `₹ ${itemsTotal}`;
+      document.getElementById('modalPackingVal').innerText = packingFee > 0 ? `+ ₹ ${packingFee}` : `₹ 0 (Free)`;
+      document.getElementById('modalGrandTotalVal').innerText = `₹ ${grandTotal}`;
+
+      if (isCustomerRemote) {
+        document.querySelector('input[name="paymentOption"][value="upi"]').checked = true;
+        onPaymentOptionChange('upi');
+      }
+
+      document.getElementById('checkoutModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeCheckoutModal() {
+      document.getElementById('checkoutModal').classList.add('hidden');
+    }
+
+    function finalizeAndPlaceOrder() {
+      const phone = document.getElementById('customerPhoneInput').value.trim();
+      const table = document.getElementById('tableSelector').value;
+      if (!phone || phone.length < 10) {
+        alert("Kripya apna 10-digit WhatsApp number dalein!");
+        return;
+      }
+
+      let itemSummary = [];
+      let itemsTotal = 0;
+      for (const [id, qty] of Object.entries(cart)) {
+        const item = menuData.find(i => i.id == id);
+        if (item) {
+          itemSummary.push
